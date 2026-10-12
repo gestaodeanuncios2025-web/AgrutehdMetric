@@ -1,0 +1,1062 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGRUTEHD - Auditoria e Diagnóstico de Saúde do Google Meu Negócio</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf.js CDN for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            800: '#1e3a8a',
+                            900: '#172554',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Print & PDF styling guardrails */
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .print-break-inside-avoid {
+                break-inside: avoid;
+            }
+        }
+        .print-only {
+            display: none;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 font-sans antialiased flex flex-col selection:bg-brand-500 selection:text-white">
+
+    <header class="no-print bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                    <i class="fa-solid fa-chart-pie text-lg"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-brand-200">AGRUTEHD</span>
+                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-500/20 text-brand-300 border border-brand-500/30 rounded-full">Pro Audit</span>
+                    </div>
+                    <span class="block text-[11px] font-medium text-slate-400">Plataforma de Diagnóstico Google Meu Negócio</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleEditMode()" class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all">
+                    <i class="fa-solid fa-pen-to-square text-brand-400"></i>
+                    <span id="editModeBtnText">Editar Dados</span>
+                </button>
+                <button onclick="openAlertModal()" class="relative flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-all">
+                    <i class="fa-solid fa-bell text-rose-400"></i>
+                    <span class="hidden md:inline">Alertas E-mail</span>
+                    <span id="unansweredBadge" class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col space-y-6">
+        
+        <section class="no-print bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/80">
+            <div class="max-w-3xl mx-auto text-center space-y-2 mb-6">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
+                    <i class="fa-solid fa-magnifying-glass-chart mr-1.5"></i> Busca Inteligente de Perfil Comercial
+                </span>
+                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Auditoria e Diagnóstico de Saúde do Perfil</h1>
+                <p class="text-xs sm:text-sm text-slate-500">Analise a saúde comercial da sua ficha no Google Maps em tempo real, detecte falhas graves e gere um relatório em PDF para o cliente.</p>
+            </div>
+
+            <!-- Search Bar Input Group -->
+            <div class="max-w-3xl mx-auto">
+                <div class="relative flex items-center">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 text-lg">
+                        <i class="fa-brands fa-google"></i>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="Digite o nome da empresa ex: Cafeteria Aroma & Arte, Clínica Vida..." 
+                        class="w-full pl-11 pr-32 py-4 bg-slate-50 border border-slate-300 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white text-sm sm:text-base transition-all shadow-inner">
+                    <div class="absolute right-2 flex items-center">
+                        <button onclick="handleSearch()" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-brand-500/20 flex items-center space-x-2">
+                            <span>Analisar</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Presets for Fast Testing -->
+                <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
+                    <span class="font-medium text-slate-500">Exemplos para testes rápidos:</span>
+                    <button onclick="loadPreset('critical')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-lg border border-rose-200 transition-colors flex items-center space-x-1">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Cafeteria Aroma (Crítico)</span>
+                    </button>
+                    <button onclick="loadPreset('moderate')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold rounded-lg border border-amber-200 transition-colors flex items-center space-x-1">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span>Clínica Vida (Moderado)</span>
+                    </button>
+                    <button onclick="loadPreset('excellent')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg border border-emerald-200 transition-colors flex items-center space-x-1">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Auto Center (Excelente)</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="loadingView" class="hidden no-print bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm space-y-4">
+            <div class="relative w-16 h-16 mx-auto">
+                <div class="w-16 h-16 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-brand-600 font-bold text-sm">
+                    <i class="fa-brands fa-google"></i>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-900" id="loadingText">Varrendo dados do Google Business Profile...</h3>
+                <p class="text-xs text-slate-500 mt-1">Coletando avaliações não respondidas, fotos recentes e categorias do ramo de atividade.</p>
+            </div>
+            <div class="max-w-xs mx-auto bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div id="loadingProgressBar" class="bg-brand-600 h-full w-0 transition-all duration-300"></div>
+            </div>
+        </div>
+
+        <section id="customizerSection" class="hidden no-print bg-slate-900 text-white rounded-2xl p-6 shadow-lg border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-sm text-brand-300 flex items-center space-x-2">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Painel de Edição Rápida de Dados (Modo Consultor)</span>
+                </h3>
+                <button onclick="toggleEditMode()" class="text-slate-400 hover:text-white text-xs">
+                    <i class="fa-solid fa-xmark"></i> Fechar
+                </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">Nome da Empresa</label>
+                    <input type="text" id="editName" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Ramo / Categoria</label>
+                    <input type="text" id="editCategory" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Nota Atual (0.0 - 5.0)</label>
+                    <input type="number" step="0.1" min="1" max="5" id="editRating" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Total de Avaliações</label>
+                    <input type="number" id="editTotalReviews" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Mensagens Pendentes</label>
+                    <input type="number" id="editUnanswered" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Dias Sem Postar Fotos</label>
+                    <input type="number" id="editPhotoDays" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Qualificação Categoria</label>
+                    <select id="editCategoryMatch" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+                        <option value="Incorreta / Incompleta">Incorreta / Incompleta</option>
+                        <option value="Parcialmente Correta">Parcialmente Correta</option>
+                        <option value="Totalmente Correta">Totalmente Correta</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button onclick="applyCustomData()" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold p-2 rounded-lg transition-colors">
+                        Recalcular Diagnóstico
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="dashboardReport" class="space-y-6">
+
+            <!-- Profile Header Summary Banner -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-start space-x-4">
+                    <div id="companyAvatar" class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-600 to-indigo-700 text-white font-black text-2xl flex items-center justify-center flex-shrink-0 shadow-md shadow-brand-500/20">
+                        CA
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 id="displayName" class="text-xl sm:text-2xl font-black text-slate-900">Cafeteria Aroma & Arte</h2>
+                            <span id="healthBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                Perfil Crítico (Ação Urgente)
+                            </span>
+                        </div>
+                        <p id="displayCategory" class="text-xs sm:text-sm text-slate-500 mt-1">
+                            <i class="fa-solid fa-store text-brand-600 mr-1"></i> Ramo: Alimentação | Categoria: Cafeteria & Salgados
+                        </p>
+                        <p id="displayAddress" class="text-xs text-slate-400 mt-0.5">
+                            <i class="fa-solid fa-location-dot mr-1"></i> Av. Brasil, 1420 - Centro Comercial
+                        </p>
+                    </div>
+                </div>
+
+                <div class="no-print flex items-center space-x-2 w-full md:w-auto justify-end border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
+                    <button onclick="openAlertModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-envelope-circle-check text-rose-500 text-sm"></i>
+                        <span>Disparar Alerta E-mail</span>
+                    </button>
+                    <button onclick="exportProfessionalPDF()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-emerald-600/20 flex items-center space-x-2">
+                        <i class="fa-solid fa-file-pdf text-sm"></i>
+                        <span>Gerar PDF do Relatório</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Health Score Card -->
+                <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute -right-4 -bottom-4 opacity-10 text-8xl">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Score Global de Saúde</span>
+                        <div class="flex items-baseline space-x-2 mt-2">
+                            <span id="scoreValue" class="text-5xl font-black text-rose-400">38</span>
+                            <span class="text-slate-400 text-xs font-semibold">/ 100 pts</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800">
+                        <p id="scoreMsg" class="text-xs text-slate-300 font-medium">Perfil com alto risco de perda de clientes locais no Google Maps.</p>
+                    </div>
+                </div>
+
+                <!-- Rating & Reviews Card -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-500">
+                        <span class="text-[11px] font-bold uppercase tracking-wider">Nota & Avaliações</span>
+                        <div id="ratingIconBox" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="flex items-baseline space-x-2">
+                            <span id="ratingVal" class="text-3xl font-black text-slate-900">3.9</span>
+                            <span id="ratingAlert" class="text-xs font-bold text-rose-600">Abaixo de 5.0</span>
+                        </div>
+                        <p id="totalReviewsVal" class="text-xs text-slate-400 mt-1">De um total de 92 avaliações no perfil</p>
+                    </div>
+                </div>
+
+                <!-- Unanswered Messages Card -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-500">
+                        <span class="text-[11px] font-bold uppercase tracking-wider">Mensagens sem Resposta</span>
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="flex items-baseline space-x-2">
+                            <span id="unansweredVal" class="text-3xl font-black text-slate-900">14</span>
+                            <span class="text-xs font-semibold text-amber-600">Pendentes</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Inclui 5 mensagens de 1 a 3 estrelas</p>
+                    </div>
+                </div>
+
+                <!-- Photos & Category Updates Card -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-500">
+                        <span class="text-[11px] font-bold uppercase tracking-wider">Mídia & Categorização</span>
+                        <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="flex items-baseline space-x-1.5">
+                            <span id="photoDaysVal" class="text-2xl font-black text-rose-600">65 dias</span>
+                            <span class="text-xs text-slate-500">sem fotos</span>
+                        </div>
+                        <p id="categoryMatchVal" class="text-xs text-slate-400 mt-1">Categoria: Incorreta / Incompleta</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left: Chart & Health Distribution -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider mb-4 flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-column text-brand-600"></i>
+                            <span>Distribuição de Avaliações</span>
+                        </h3>
+                        <div class="h-48 relative">
+                            <canvas id="reviewsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                        <span><i class="fa-solid fa-circle text-emerald-500 mr-1"></i> Positivas (4-5★)</span>
+                        <span><i class="fa-solid fa-circle text-rose-500 mr-1"></i> Negativas (1-3★)</span>
+                    </div>
+                </div>
+
+                <!-- Right: Detailed Audit Checklist -->
+                <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider flex items-center space-x-2">
+                                <i class="fa-solid fa-list-check text-brand-600"></i>
+                                <span>Checklist de Cadastro & saúde do perfil</span>
+                            </h3>
+                            <span class="text-xs text-slate-400">Verificação Automática</span>
+                        </div>
+                        <div id="checklistGrid" class="space-y-2.5">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                        <span class="px-2.5 py-1 bg-rose-100 text-rose-700 text-[10px] font-bold rounded-md uppercase tracking-wider">
+                            Monitoramento de Crise
+                        </span>
+                        <h3 class="text-base font-bold text-slate-900 mt-1">Mensagens & Avaliações Negativas Não Respondidas</h3>
+                    </div>
+                    <button onclick="simulateAllAlerts()" class="no-print px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-xs transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Enviar Notificação de Emergência por E-mail</span>
+                    </button>
+                </div>
+
+                <div id="negativeMessagesList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-800 space-y-6">
+                <div class="max-w-2xl">
+                    <span class="px-3 py-1 bg-brand-500/20 text-brand-300 border border-brand-500/30 text-xs font-bold rounded-full uppercase tracking-widest">
+                        Diferencial Comercial AGRUTEHD
+                    </span>
+                    <h3 class="text-2xl font-black text-white mt-2">Comparativo de Saúde: Situação Atual vs. Após 30 Dias</h3>
+                    <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                        Apresente ao cliente o valor exato do serviço demonstrando a transição de um perfil inadequado para um totalmente adequado.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- ANTES: Inadequado -->
+                    <div class="bg-slate-800/80 border border-rose-500/30 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+                        <div class="absolute top-0 right-0 bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                            Situação Atual (Inadequado)
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-lg">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">Score Baixo & Perda de Clientes</h4>
+                                    <p id="beforeScoreText" class="text-xs text-slate-400">Score de 38/100 (Visibilidade reduzida no Google Maps)</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-lg">
+                                    <i class="fa-solid fa-comment-slash"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">Mensagens Ignoradas</h4>
+                                    <p id="beforeMsgText" class="text-xs text-slate-400">14 clientes sem resposta (Avaliações ruins expostas)</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-lg">
+                                    <i class="fa-solid fa-image text-rose-400"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">Imagens & Cadastro Obsoletos</h4>
+                                    <p id="beforePhotoText" class="text-xs text-slate-400">Sem fotos novas há mais de 60 dias e categoria incorreta</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-700/60 flex items-center justify-between text-xs text-rose-400 font-semibold">
+                            <span>Status: Baixa Conversão</span>
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </div>
+                    </div>
+
+                    <!-- DEPOIS: Totalmente Adequado -->
+                    <div class="bg-slate-800/80 border border-emerald-500/40 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+                        <div class="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                            Após 30 Dias (Adequado)
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">Score Otimizado (95+/100)</h4>
+                                    <p class="text-xs text-emerald-300 font-medium">Topo das buscas locais no Google Maps e Local Pack</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">
+                                    <i class="fa-solid fa-reply"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">100% de Respostas Ativas</h4>
+                                    <p class="text-xs text-emerald-300 font-medium">Todas as mensagens positivas e negativas respondidas com SEO</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">
+                                    <i class="fa-solid fa-camera-retro"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">Fotos Semanalmente Atualizadas</h4>
+                                    <p class="text-xs text-emerald-300 font-medium">Categoria do ramo validada e cadastro 100% preenchido</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-700/60 flex items-center justify-between text-xs text-emerald-400 font-semibold">
+                            <span>Status: Alta Atração de Clientes</span>
+                            <i class="fa-solid fa-arrow-up"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="printableReportDocument" class="print-only bg-white p-8 text-slate-900 space-y-6 max-w-4xl mx-auto">
+            <!-- Header Print Banner -->
+            <div class="flex items-center justify-between border-b-2 border-slate-900 pb-4">
+                <div>
+                    <h1 class="text-3xl font-black text-slate-900 tracking-tight">AGRUTEHD</h1>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Relatório Comercial de Auditoria do Google Meu Negócio</p>
+                </div>
+                <div class="text-right">
+                    <span id="pdfPrintDate" class="text-xs font-semibold text-slate-500">Data: 12/10/2026</span>
+                    <div class="text-xs font-bold text-brand-600">Documento Oficial de Diagnóstico</div>
+                </div>
+            </div>
+
+            <!-- Profile Summary Box -->
+            <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div>
+                    <span class="text-[10px] font-bold uppercase text-slate-400">Empresa Auditada</span>
+                    <h3 id="pdfCompName" class="text-lg font-bold text-slate-900">Cafeteria Aroma & Arte</h3>
+                    <p id="pdfCompCategory" class="text-xs text-slate-600 mt-0.5">Ramo: Alimentação & Bebidas</p>
+                    <p id="pdfCompAddress" class="text-xs text-slate-500">Av. Brasil, 1420 - Centro</p>
+                </div>
+                <div class="text-right flex flex-col justify-center">
+                    <span class="text-[10px] font-bold uppercase text-slate-400">Score de Saúde Atual</span>
+                    <div class="text-3xl font-black text-rose-600"><span id="pdfScoreNum">38</span> <span class="text-xs text-slate-400 font-normal">/ 100 pts</span></div>
+                    <span id="pdfStatusBadgeText" class="text-xs font-bold text-rose-600">Perfil Crítico - Necessita Otimização</span>
+                </div>
+            </div>
+
+            <!-- Summary Table of Key Metrics -->
+            <div>
+                <h4 class="font-extrabold text-xs uppercase tracking-wider text-slate-900 mb-2">1. Diagnóstico do Estado Atual</h4>
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700">
+                            <th class="p-2 border border-slate-200 font-bold">Métrica Analisada</th>
+                            <th class="p-2 border border-slate-200 font-bold">Situação Encontrada</th>
+                            <th class="p-2 border border-slate-200 font-bold">Impacto Comercial</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pdfTableBody">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Before x After 30 Days -->
+            <div class="print-break-inside-avoid">
+                <h4 class="font-extrabold text-xs uppercase tracking-wider text-slate-900 mb-2">2. Plano de Transformação (Antes vs. Após 30 Dias)</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 bg-rose-50 border border-rose-200 rounded-lg">
+                        <span class="font-bold text-rose-800 text-xs uppercase">Situação Atual (Antes)</span>
+                        <ul class="mt-2 space-y-1 text-[11px] text-slate-700 list-disc list-inside">
+                            <li>Nota abaixo de 4.5 e avaliações ruins expostas</li>
+                            <li>Mensagens de clientes sem resposta</li>
+                            <li>Falta de atualização de fotos há semanas</li>
+                            <li>Categorias secundárias não configuradas</li>
+                        </ul>
+                    </div>
+                    <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                        <span class="font-bold text-emerald-800 text-xs uppercase">Projeção Após 30 Dias (Depois)</span>
+                        <ul class="mt-2 space-y-1 text-[11px] text-slate-700 list-disc list-inside">
+                            <li>Score do perfil elevado para 95+ pontos</li>
+                            <li>100% das mensagens e avaliações respondidas</li>
+                            <li>Publicações e fotos semanais ativas</li>
+                            <li>Ranqueamento elevado no Google Maps</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signatures / Footer -->
+            <div class="pt-6 border-t border-slate-200 flex justify-between items-center text-[10px] text-slate-400 print-break-inside-avoid">
+                <span>AGRUTEHD - Inteligência e Gestão de Google Meu Negócio</span>
+                <span>Relatório Gerado Automático</span>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="alertModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                    <i class="fa-solid fa-envelope-circle-check text-rose-600"></i>
+                    <span>Configuração de Alerta por E-mail</span>
+                </h3>
+                <button onclick="closeAlertModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-500">
+                Sempre que o sistema detectar avaliações negativas (1 a 3 estrelas) ou mensagens pendentes, um e-mail de alerta de emergência será disparado para a gerência da empresa.
+            </p>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail do Proprietário / Gerente</label>
+                    <input type="email" id="alertEmailInput" value="gerencia@empresa.com.br" 
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Gatilho de Disparo</label>
+                    <select id="alertTriggerSelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm">
+                        <option value="all">Notificar em qualquer avaliação 1-3 estrelas ou mensagem sem resposta</option>
+                        <option value="critical">Notificar apenas em avaliações de 1 e 2 estrelas</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button onclick="closeAlertModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl text-xs">Cancelar</button>
+                <button onclick="saveAlertSettings()" class="px-4 py-2 bg-brand-600 text-white font-semibold rounded-xl text-xs shadow-md">Salvar E-mail</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 text-xs border border-slate-800 no-print">
+        <div id="toastIcon" class="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <span id="toastMessage" class="font-medium">Ação realizada com sucesso!</span>
+    </div>
+
+    <script>
+        // Preset Datasets
+        const presets = {
+            critical: {
+                name: "Cafeteria Aroma & Arte",
+                category: "Cafeteria & Padaria",
+                branch: "Alimentação e Bebidas",
+                address: "Av. Brasil, 1420 - Centro Comercial",
+                initials: "CA",
+                rating: 3.9,
+                totalReviews: 92,
+                unanswered: 14,
+                negativeCount: 5,
+                photoDays: 65,
+                categoryMatch: "Incorreta / Incompleta",
+                checklist: [
+                    { name: "Nota Média do Perfil", val: "3.9 / 5.0 (Abaixo de 5.0)", ok: false },
+                    { name: "Resposta de Mensagens Negativas", val: "5 avaliações ruins ignoradas", ok: false },
+                    { name: "Resposta de Mensagens Positivas", val: "9 avaliações boas sem resposta", ok: false },
+                    { name: "Atualização de Fotos e Postagens", val: "Sem fotos há 65 dias", ok: false },
+                    { name: "Qualificação da Categoria Correta", val: "Faltam categorias secundárias", ok: false },
+                    { name: "Ramo de Atividade Cadastrado", val: "Alimentação (Cadastrado parcialmente)", ok: true },
+                    { name: "Completude dos Horários de Funcionamento", val: "Horários de feriados ausentes", ok: false }
+                ],
+                negatives: [
+                    { author: "Marcio Souza", stars: 1, text: "Atendimento demorado e café frio. Ninguém responde as mensagens no Google!", date: "Há 2 dias" },
+                    { author: "Beatriz Lima", stars: 2, text: "Fui ao local e o horário no Google informava aberto, mas estava fechado.", date: "Há 4 dias" },
+                    { author: "Renato D.", stars: 2, text: "Preço alto para pouca qualidade. Falta gestão de atendimento.", date: "Há 1 semana" }
+                ]
+            },
+            moderate: {
+                name: "Clínica Vida & Saúde",
+                category: "Clínica Médica e Exames",
+                branch: "Saúde e Bem-Estar",
+                address: "Rua das Flores, 880 - Bairro Jardim",
+                initials: "VS",
+                rating: 4.5,
+                totalReviews: 185,
+                unanswered: 4,
+                negativeCount: 2,
+                photoDays: 22,
+                categoryMatch: "Parcialmente Correta",
+                checklist: [
+                    { name: "Nota Média do Perfil", val: "4.5 / 5.0 (Boa, mas requer atenção)", ok: true },
+                    { name: "Resposta de Mensagens Negativas", val: "2 avaliações 3 estrelas pendentes", ok: false },
+                    { name: "Resposta de Mensagens Positivas", val: "2 mensagens sem resposta", ok: false },
+                    { name: "Atualização de Fotos e Postagens", val: "Fotos recentes há 22 dias", ok: true },
+                    { name: "Qualificação da Categoria Correta", val: "Categoria principal ajustada", ok: true },
+                    { name: "Ramo de Atividade Cadastrado", val: "Saúde (Correto)", ok: true },
+                    { name: "Completude dos Horários de Funcionamento", val: "Horários completos", ok: true }
+                ],
+                negatives: [
+                    { author: "Carla Mendes", stars: 3, text: "Médico atendeu muito bem, mas a recepção demorou 40 minutos.", date: "Há 3 dias" }
+                ]
+            },
+            excellent: {
+                name: "Auto Center Express",
+                category: "Oficina Mecânica & Pneus",
+                branch: "Serviços Automotivos",
+                address: "Rodovia BR-101, Km 12 - Dist. Industrial",
+                initials: "AC",
+                rating: 4.9,
+                totalReviews: 310,
+                unanswered: 0,
+                negativeCount: 0,
+                photoDays: 4,
+                categoryMatch: "Totalmente Correta",
+                checklist: [
+                    { name: "Nota Média do Perfil", val: "4.9 / 5.0 (Excelente)", ok: true },
+                    { name: "Resposta de Mensagens Negativas", val: "100% de mensagens respondidas", ok: true },
+                    { name: "Resposta de Mensagens Positivas", val: "100% respondidas com SEO", ok: true },
+                    { name: "Atualização de Fotos e Postagens", val: "Fotos postadas há 4 dias", ok: true },
+                    { name: "Qualificação da Categoria Correta", val: "Categorias secundárias completas", ok: true },
+                    { name: "Ramo de Atividade Cadastrado", val: "Serviços Automotivos (Perfeito)", ok: true },
+                    { name: "Completude dos Horários de Funcionamento", val: "Perfil 100% preenchido", ok: true }
+                ],
+                negatives: []
+            }
+        };
+
+        // Application State Variables
+        let currentData = { ...presets.critical };
+        let targetAlertEmail = "gerencia@empresa.com.br";
+        let reviewsChartInstance = null;
+
+        // Dynamic Health Score Algorithm (0-100)
+        function calculateScore(data) {
+            let score = 100;
+
+            // Deduct for lower ratings (Max -35 pts)
+            if (data.rating < 5.0) {
+                const diff = (5.0 - data.rating);
+                score -= Math.round(diff * 25);
+            }
+
+            // Deduct for unanswered messages (Max -25 pts)
+            score -= Math.min(25, data.unanswered * 2);
+
+            // Deduct for outdated photos (Max -20 pts)
+            if (data.photoDays > 30) {
+                const photoPenalty = Math.min(20, Math.round((data.photoDays - 30) / 2));
+                score -= photoPenalty;
+            }
+
+            // Deduct for category issues (Max -20 pts)
+            if (data.categoryMatch === "Incorreta / Incompleta") {
+                score -= 20;
+            } else if (data.categoryMatch === "Parcialmente Correta") {
+                score -= 10;
+            }
+
+            return Math.max(15, Math.min(100, score));
+        }
+
+        // Render Data into Dashboard Components
+        function renderDashboard() {
+            const data = currentData;
+            const score = calculateScore(data);
+
+            // Populate Text Header
+            document.getElementById('displayName').textContent = data.name;
+            document.getElementById('displayCategory').innerHTML = `<i class="fa-solid fa-store text-brand-600 mr-1"></i> Ramo: ${data.branch} | Categoria: ${data.category}`;
+            document.getElementById('displayAddress').innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i> ${data.address}`;
+            document.getElementById('companyAvatar').textContent = data.initials;
+
+            // Health Score Badge Logic
+            const badge = document.getElementById('healthBadge');
+            const scoreVal = document.getElementById('scoreValue');
+            const scoreMsg = document.getElementById('scoreMsg');
+
+            scoreVal.textContent = score;
+
+            if (score < 50) {
+                badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200";
+                badge.textContent = "Perfil Crítico (Ação Urgente)";
+                scoreVal.className = "text-5xl font-black text-rose-400";
+                scoreMsg.textContent = "Perfil com severas pendências e perda de clientes locais no Google Maps.";
+            } else if (score < 80) {
+                badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200";
+                badge.textContent = "Perfil Moderado (Requer Ajustes)";
+                scoreVal.className = "text-5xl font-black text-amber-400";
+                scoreMsg.textContent = "Perfil razoável, mas perde espaço para concorrentes otimizados na região.";
+            } else {
+                badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200";
+                badge.textContent = "Perfil Totalmente Adequado";
+                scoreVal.className = "text-5xl font-black text-emerald-400";
+                scoreMsg.textContent = "Excelente presença digital com alta visibilidade e conversão no Google Meu Negócio.";
+            }
+
+            // Key Metric Cards
+            document.getElementById('ratingVal').textContent = data.rating.toFixed(1);
+            document.getElementById('totalReviewsVal').textContent = `De um total de ${data.totalReviews} avaliações no perfil`;
+            document.getElementById('unansweredVal').textContent = data.unanswered;
+            document.getElementById('photoDaysVal').textContent = `${data.photoDays} dias`;
+            document.getElementById('categoryMatchVal').textContent = `Categoria: ${data.categoryMatch}`;
+
+            // Rating alert text
+            const ratingAlert = document.getElementById('ratingAlert');
+            if (data.rating < 5.0) {
+                ratingAlert.textContent = "Abaixo de 5.0";
+                ratingAlert.className = "text-xs font-bold text-rose-600";
+            } else {
+                ratingAlert.textContent = "Nota Máxima";
+                ratingAlert.className = "text-xs font-bold text-emerald-600";
+            }
+
+            // Before / After texts
+            document.getElementById('beforeScoreText').textContent = `Score de ${score}/100 (${score < 50 ? 'Baixa visibilidade' : 'Potencial não atingido'})`;
+            document.getElementById('beforeMsgText').textContent = `${data.unanswered} mensagens pendentes e avaliações expostas`;
+            document.getElementById('beforePhotoText').textContent = `${data.photoDays} dias sem fotos e categorização ${data.categoryMatch.toLowerCase()}`;
+
+            // Render Checklist
+            const checkGrid = document.getElementById('checklistGrid');
+            checkGrid.innerHTML = '';
+            data.checklist.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-3 rounded-xl border text-xs ${item.ok ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50/50 border-rose-100'}`;
+                div.innerHTML = `
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-6 h-6 rounded-lg ${item.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'} flex items-center justify-center font-bold">
+                            <i class="fa-solid ${item.ok ? 'fa-check' : 'fa-xmark'}"></i>
+                        </div>
+                        <span class="font-semibold text-slate-800">${item.name}</span>
+                    </div>
+                    <span class="font-bold ${item.ok ? 'text-emerald-700' : 'text-rose-700'}">${item.val}</span>
+                `;
+                checkGrid.appendChild(div);
+            });
+
+            // Render Negative Messages List
+            const negList = document.getElementById('negativeMessagesList');
+            negList.innerHTML = '';
+            if (data.negatives.length === 0) {
+                negList.innerHTML = `
+                    <div class="col-span-2 p-4 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-800 text-xs font-semibold flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                        <span>Nenhuma mensagem ou avaliação negativa não respondida encontrada neste perfil!</span>
+                    </div>
+                `;
+            } else {
+                data.negatives.forEach(msg => {
+                    const div = document.createElement('div');
+                    div.className = "p-3.5 bg-rose-50/60 border border-rose-200 rounded-xl space-y-2 text-xs";
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-900">${msg.author} <span class="text-rose-600 font-bold">(${msg.stars} ⭐)</span></span>
+                            <span class="text-[10px] font-medium text-slate-400">${msg.date}</span>
+                        </div>
+                        <p class="text-slate-600 italic">"${msg.text}"</p>
+                        <div class="pt-1 flex justify-end">
+                            <button onclick="simulateSingleAlert('${msg.author}')" class="no-print px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg text-[10px] transition-colors flex items-center space-x-1">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>Alerta p/ E-mail</span>
+                            </button>
+                        </div>
+                    `;
+                    negList.appendChild(div);
+                });
+            }
+
+            // Render Chart
+            renderChart(data);
+
+            // Populate PDF view
+            document.getElementById('pdfCompName').textContent = data.name;
+            document.getElementById('pdfCompCategory').textContent = `Ramo: ${data.branch} | ${data.category}`;
+            document.getElementById('pdfCompAddress').textContent = data.address;
+            document.getElementById('pdfScoreNum').textContent = score;
+            document.getElementById('pdfPrintDate').textContent = `Data: ${new Date().toLocaleDateString('pt-BR')}`;
+
+            const pdfTable = document.getElementById('pdfTableBody');
+            pdfTable.innerHTML = '';
+            data.checklist.forEach(chk => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2 border border-slate-200 font-bold text-slate-800">${chk.name}</td>
+                    <td class="p-2 border border-slate-200 font-semibold ${chk.ok ? 'text-emerald-700' : 'text-rose-600'}">${chk.val}</td>
+                    <td class="p-2 border border-slate-200 text-slate-600">${chk.ok ? 'Atende ao padrão do Google' : 'Prejudica ranqueamento no Maps'}</td>
+                `;
+                pdfTable.appendChild(tr);
+            });
+        }
+
+        // Render Chart.js Distribution
+        function renderChart(data) {
+            const ctx = document.getElementById('reviewsChart').getContext('2d');
+            if (reviewsChartInstance) {
+                reviewsChartInstance.destroy();
+            }
+
+            const positiveCount = Math.max(1, data.totalReviews - data.unanswered);
+            const negativeCount = Math.max(0, data.unanswered);
+
+            reviewsChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mensagens Positivas/Atendidas', 'Mensagens Pendentes/Críticas'],
+                    datasets: [{
+                        data: [positiveCount, negativeCount],
+                        backgroundColor: ['#10b981', '#f43f5e'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        // Search Action Handling
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                showToast("Digite o nome de uma empresa para realizar a busca.", "warning");
+                return;
+            }
+
+            const loading = document.getElementById('loadingView');
+            const progressBar = document.getElementById('loadingProgressBar');
+            const report = document.getElementById('dashboardReport');
+
+            report.classList.add('hidden');
+            loading.classList.remove('hidden');
+            progressBar.style.width = '10%';
+
+            setTimeout(() => { progressBar.style.width = '50%'; }, 200);
+            setTimeout(() => { progressBar.style.width = '90%'; }, 500);
+
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                report.classList.remove('hidden');
+
+                // Generate dynamic data from search query
+                currentData = {
+                    name: query,
+                    category: "Comércio e Serviços Locais",
+                    branch: "Negócio Local",
+                    address: "Endereço localizado via Google Maps",
+                    initials: query.substring(0, 2).toUpperCase(),
+                    rating: 4.1,
+                    totalReviews: 75,
+                    unanswered: 8,
+                    negativeCount: 3,
+                    photoDays: 45,
+                    categoryMatch: "Incorreta / Incompleta",
+                    checklist: [
+                        { name: "Nota Média do Perfil", val: "4.1 / 5.0 (Necessita ajuste)", ok: false },
+                        { name: "Resposta de Mensagens Negativas", val: "3 mensagens pendentes", ok: false },
+                        { name: "Resposta de Mensagens Positivas", val: "5 mensagens sem resposta", ok: false },
+                        { name: "Atualização de Fotos e Postagens", val: "Sem fotos há 45 dias", ok: false },
+                        { name: "Qualificação da Categoria Correta", val: "Categoria não otimizada", ok: false },
+                        { name: "Ramo de Atividade Cadastrado", val: "Verificado", ok: true },
+                        { name: "Completude dos Horários de Funcionamento", val: "Cadastro incompleto", ok: false }
+                    ],
+                    negatives: [
+                        { author: "Cliente Google", stars: 2, text: "Falta de informação nos horários e atendimento lento pelo chat.", date: "Há 1 dia" }
+                    ]
+                };
+
+                renderDashboard();
+                showToast(`Auditoria concluída para "${query}"!`);
+            }, 800);
+        }
+
+        // Preset Loaders
+        function loadPreset(key) {
+            if (!presets[key]) return;
+            currentData = { ...presets[key] };
+            renderDashboard();
+            showToast(`Dados de "${currentData.name}" carregados!`);
+        }
+
+        // Customizer Controls
+        function toggleEditMode() {
+            const sec = document.getElementById('customizerSection');
+            sec.classList.toggle('hidden');
+
+            if (!sec.classList.contains('hidden')) {
+                document.getElementById('editName').value = currentData.name;
+                document.getElementById('editCategory').value = currentData.category;
+                document.getElementById('editRating').value = currentData.rating;
+                document.getElementById('editTotalReviews').value = currentData.totalReviews;
+                document.getElementById('editUnanswered').value = currentData.unanswered;
+                document.getElementById('editPhotoDays').value = currentData.photoDays;
+                document.getElementById('editCategoryMatch').value = currentData.categoryMatch;
+            }
+        }
+
+        function applyCustomData() {
+            currentData.name = document.getElementById('editName').value;
+            currentData.category = document.getElementById('editCategory').value;
+            currentData.rating = parseFloat(document.getElementById('editRating').value) || 4.0;
+            currentData.totalReviews = parseInt(document.getElementById('editTotalReviews').value) || 10;
+            currentData.unanswered = parseInt(document.getElementById('editUnanswered').value) || 0;
+            currentData.photoDays = parseInt(document.getElementById('editPhotoDays').value) || 0;
+            currentData.categoryMatch = document.getElementById('editCategoryMatch').value;
+            currentData.initials = currentData.name.substring(0, 2).toUpperCase();
+
+            // Rebuild checklist items according to custom values
+            currentData.checklist[0].val = `${currentData.rating.toFixed(1)} / 5.0`;
+            currentData.checklist[0].ok = currentData.rating >= 4.8;
+            currentData.checklist[1].val = `${currentData.unanswered} mensagens pendentes`;
+            currentData.checklist[1].ok = currentData.unanswered === 0;
+            currentData.checklist[3].val = `${currentData.photoDays} dias sem fotos`;
+            currentData.checklist[3].ok = currentData.photoDays <= 15;
+
+            renderDashboard();
+            toggleEditMode();
+            showToast("Valores do diagnóstico recalculados!");
+        }
+
+        // Alert Modal Controls
+        function openAlertModal() {
+            document.getElementById('alertModal').classList.remove('hidden');
+        }
+
+        function closeAlertModal() {
+            document.getElementById('alertModal').classList.add('hidden');
+        }
+
+        function saveAlertSettings() {
+            const email = document.getElementById('alertEmailInput').value.trim();
+            if (!email || !email.includes('@')) {
+                showToast("Insira um endereço de e-mail válido.", "warning");
+                return;
+            }
+            targetAlertEmail = email;
+            closeAlertModal();
+            showToast(`E-mail de alerta configurado para ${targetAlertEmail}!`);
+        }
+
+        function simulateSingleAlert(author) {
+            showToast(`Alerta de emergência sobre "${author}" enviado para ${targetAlertEmail}!`);
+        }
+
+        function simulateAllAlerts() {
+            showToast(`Notificação de crise enviada para ${targetAlertEmail} com todas as mensagens pendentes!`);
+        }
+
+        // Professional PDF Export Generator via html2pdf
+        function exportProfessionalPDF() {
+            showToast("Preparando o documento para geração de PDF comercial...");
+            const doc = document.getElementById('printableReportDocument');
+
+            doc.style.display = 'block';
+
+            const opt = {
+                margin:       8,
+                filename:     `AGRUTEHD_Auditoria_${currentData.name.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(doc).set(opt).save().then(() => {
+                doc.style.display = 'none';
+                showToast("Relatório PDF baixado com sucesso!");
+            }).catch(err => {
+                doc.style.display = 'none';
+                showToast("Falha ao gerar o PDF. Tente novamente.", "warning");
+            });
+        }
+
+        // Toast Helper
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toastNotification');
+            const msg = document.getElementById('toastMessage');
+            const icon = document.getElementById('toastIcon');
+
+            msg.textContent = message;
+            if (type === 'warning') {
+                icon.className = "w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs";
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else {
+                icon.className = "w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs";
+                icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+
+        // Initialize App on Page Load
+        window.onload = function() {
+            renderDashboard();
+        };
+    </script>
+</body>
+</html>
+```
